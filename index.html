@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+<title>Luctus' LiveLog</title>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<style>
+    form, input {display:inline-block;}
+    body{background-color: #202020;}
+    pre{color: GhostWhite;}
+    .btn{
+        border: 1px solid deepskyblue;
+        background-color: #606060;
+        color:White;
+        margin-left:5px;
+    }
+    #cmd{
+        background-color: #606060;
+        color:White;
+    }
+</style>
+</head>
+<body>
+
+<pre id="log"></pre>
+
+<hr>
+
+<form id="command">
+    <input type="text" size=90 id="cmd" placeholder="status">
+    <input type="submit" class="btn" value="Execute">
+</form>
+<form id="reload">
+    <input type="submit" class="btn" value="fix rcon">
+</form>
+<form id="restart">
+    <input type="submit" class="btn" value="restart server">
+</form>
+<form id="scroll">
+    <input id="scrollbtn" type="submit" class="btn" value="stop autoscroll">
+</form>
+<form id="clear">
+    <input type="submit" class="btn" value="clear log">
+</form>
+
+</body>
+<script>
+
+var shouldScroll = true;    
+var scrollBtn = document.getElementById("scrollbtn");
+function autoScroll(){
+    if(shouldScroll){
+        window.scrollTo(0,document.body.scrollHeight);
+    }
+}
+
+var socket = io();
+var logEl = document.getElementById("log");
+socket.on("log", function(msg){
+    logEl.innerText += msg+"\n";
+    autoScroll();
+});
+socket.on("logBuffer", function(msg){
+    console.log("Receiving logBuffer");
+    console.log(msg);
+    for(var i = 0; i < msg.length; i++){
+        logEl.innerText += msg[i]+"\n";
+    }
+    autoScroll();
+});
+
+$("#command").submit(function(){
+    socket.emit("cmd",document.getElementById("cmd").value);
+    document.getElementById("cmd").value = "";
+    return false;
+});
+$("#reload").submit(function(){
+    socket.emit("reloadRcon","");
+    return false;
+});
+$("#restart").submit(function(){
+    if(confirm("Do you really want to restart the server?")){
+        socket.emit("restart","");
+    }
+    return false;
+});
+$("#scroll").submit(function(){
+    if(scrollBtn.value == "stop autoscroll"){
+        shouldScroll = false;
+        scrollBtn.value = "start autoscroll";
+    }else{
+        shouldScroll = true;
+        scrollBtn.value = "stop autoscroll";
+    }
+    return false;
+});
+$("#clear").submit(function(){
+    logEl.innerText = "";
+    return false;
+});
+</script>
+</html>
+
