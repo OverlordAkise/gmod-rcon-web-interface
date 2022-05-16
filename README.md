@@ -2,12 +2,14 @@
 
 See your gmod logs and write rcon commands via your browser
 
+**Warning**: This only works if you have a linux server and your gmod server was installed with LinuxGSM!
+
 If you need help with this don't be afraid to contact me or open an issue.
 
 
 ## Install
 
-This requires you to have NodeJS installed.  
+This requires you to have NodeJS and a webserver (nginx or apache2) installed.  
 This only works for gmod servers that were installed with LinuxGSM! ([https://linuxgsm.com/servers/gmodserver/](https://linuxgsm.com/servers/gmodserver/))
 
 
@@ -22,6 +24,13 @@ nano main.js
 node main.js
 ```
 
+To start it in the background:
+
+```bash
+node main.js > log.log 2>&1 &
+```
+
+
 ## Securing your logs
 
 I highly recommend you to not expose this application to the public via the 3001 port!  
@@ -32,25 +41,23 @@ For nginx my configuration looks as follows:
 
 ```
 # Forward and secure the requests to the log
-location /log {
-    proxy_pass http://localhost:3001/;
-    auth_basic "Unauthorized access is prohibited!";
-    auth_basic_user_file /etc/nginx/.htpasswd;
+location /log/darkrp {
+        proxy_pass http://localhost:3001/;
+        auth_basic "Unauthorized access is prohibited!";
+        auth_basic_user_file /etc/nginx/.htpasswd;
 }
 
 # Forward the socket io requests aswell
-location ~* \.io {
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Host $http_host;
-    proxy_set_header X-NginX-Proxy false;
-
-    proxy_pass http://localhost:3001;
-    proxy_redirect off;
-
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
+location /log/darkrp/socket {
+        proxy_pass http://localhost:3001/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_redirect off;
 }
 ```
 
